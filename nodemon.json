@@ -1,0 +1,6 @@
+{
+    "env": {
+        "MONGO_PW": "odbfdbsf4rour7g",
+        "APP_URL": "http://localhost:3000"
+    }
+}
