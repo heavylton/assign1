@@ -85,27 +85,32 @@ function computeCost(vehicle, rent){
             refueling = 0.75*rent.travelDistance
         }
     }
-    console.log(2*(1 + (journeyTime-(journeyTime%30))/30));
     return travelFee - refueling;
 }
 
 function assignVehicles(onePermutation, rentsOrdered){
     const successfulAssignment = [];
-    let tempRents = [];
-    tempRents = rentsOrdered;
-    console.log(tempRents.length);
+    let tempRents = rentsOrdered;
     for(let i=0; i<onePermutation.length; i++){
         for(let j=tempRents.length-1; j>=0; j--){
             if(tempRents[j].passengers <= onePermutation[i].passengerCapacity &&
                 tempRents[j].travelDistance <= onePermutation[i].range){
                     successfulAssignment.push({
-                        vehicle: onePermutation[i]._id,
-                        rent: tempRents[j]._id
+                        vehicle: onePermutation[i],
+                        rent: tempRents[j]
                     });
-                    tempRents.slice(0,j).concat(tempRents.slice(j+1));
+                    tempRents = tempRents.slice(0,j).concat(tempRents.slice(j+1));
+                    break;
             }
         }
     }
+
+    let assumedProfit = 0;
+    for(let i=0; i<successfulAssignment.length; i++){
+        assumedProfit += computeCost(successfulAssignment[i].vehicle, successfulAssignment[i].rent);
+        console.log(computeCost(successfulAssignment[i].vehicle, successfulAssignment[i].rent));
+    }
+    console.log(assumedProfit);
 }
 
 exports.rent_get_all_data = (req, res, next) => {
@@ -113,7 +118,8 @@ exports.rent_get_all_data = (req, res, next) => {
     getAllRents();
     getAllVehicles();
     function stat() {
-        res.status(200).json(assignVehicles(allVehicleCombinations(allVehicles)[0]), allRentsOrdered);
+        assignVehicles(allVehicleCombinations(allVehicles)[0], allRents);
+        res.status(200).json(allRents);
     }
     setTimeout(stat, 100);
 }
