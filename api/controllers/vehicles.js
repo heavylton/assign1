@@ -1,13 +1,13 @@
 const Vehicle = require('../models/vehicle');
 const mongoose = require('mongoose');
 
+// for router.GET
 exports.vehicles_get_all = (req, res, next) => {
     Vehicle.find()
     .select('passengerCapacity range fuel available _id')
     .exec()
     .then(docs => {
         const response = {
-            count: docs.length,
             products: docs.map(doc => {
                 return {
                     passengerCapacity: doc.passengerCapacity,
@@ -32,6 +32,7 @@ exports.vehicles_get_all = (req, res, next) => {
     });
 }
 
+// for router.POST
 exports.vehicle_create = (req, res, next) => {
     const vehicle = new Vehicle({
         _id: new mongoose.Types.ObjectId(),
@@ -44,7 +45,7 @@ exports.vehicle_create = (req, res, next) => {
     .then(result => {
         console.log(result);
         res.status(201).json({
-            message: "POST yay!",
+            message: 'created vehicle',
             createdVehicle: {
                 passengerCapacity: result.passengerCapacity,
                 range: result.range,
@@ -66,18 +67,14 @@ exports.vehicle_create = (req, res, next) => {
     });
 }
 
+// for router.GET/:id
 exports.vehicle_get_by_id = (req, res, next) => {
     const id = req.params.vehicleId;
-    if(id === "yay"){
-        res.status(200).json({
-            message: "YAAAY"
-        });
-    }else{
+    
     Vehicle.findById(id)
     .select('passengerCapacity range fuel available _id')
     .exec()
     .then(doc => {
-        console.log("from db", doc);
         if(doc){
             res.status(200).json({
                 vehicle: doc,
@@ -95,9 +92,10 @@ exports.vehicle_get_by_id = (req, res, next) => {
     .catch(e => {
         console.log(e);
         res.status(500).json({error: e});
-    });}
+    });
 }
 
+// for Router.DELETE/:id
 exports.vehicle_delete = (req, res, next) => {
     const id = req.params.vehicleId;
     Vehicle.deleteOne({_id: id})
@@ -119,30 +117,3 @@ exports.vehicle_delete = (req, res, next) => {
         });
     });
 }
-
-/*
-(req, res, next) => {
-    const id = req.params.vehicleId;
-    const changedAttrs = {};
-    for(const attrs of req.body){
-        changedAttrs[attrs.propName] = attrs.value;
-    }
-    Vehicle.updateOne({_id: id}, { $set: changedAttrs})
-    .exec()
-    .then(result => {
-        res.status(200).json({
-            message: 'updated vehicle',
-            request: {
-                type: 'GET',
-                url: req.protocol + '://' + req.get('host') + '/vehicles/' + id
-            }
-        });
-    })
-    .catch(e => {
-        console.log(e);
-        res.status(500).json({
-            error: e
-        });
-    });    
-}
-*/

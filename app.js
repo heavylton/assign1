@@ -23,10 +23,11 @@ app.use((req, res, next) => {
     next();
 })
 
-//routes
+// routes
 app.use('/vehicles', vehicleRoutes);
 app.use('/renting', rentRoutes);
 
+// error handling
 app.use((req, res, next) => {
     const error = new Error('Not found');
     error.status = 404;

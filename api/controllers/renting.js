@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const allVehicles = [];
 const allRents = [];
 
+// returns all distinct permutations of an array
 function allPermutations(array){
     let result = [];
     if(array.length === 0) return [];
@@ -25,6 +26,7 @@ function allPermutations(array){
     return result;
 }
 
+// populate allVehicles with data
 function getAllVehicles(){
     allVehicles.splice(0, allVehicles.length);
 
@@ -39,6 +41,7 @@ function getAllVehicles(){
     });
 }
 
+// populate allRents with data
 function getAllRents() {
     allRents.splice(0, allRents.length);
 
@@ -53,18 +56,21 @@ function getAllRents() {
     }); 
 }
 
-function allVehicleCombinations(vehicles){
+// returns all permutations of available vehicles
+function allVehiclePermutations(vehicles){
     let allAvailableVehicles = vehicles.filter(vehicle => vehicle.available).sort((x, y) => x.range - y.range).sort((x, y) => y.passengerCapacity - x.passengerCapacity);
     const permutations = allPermutations(allAvailableVehicles);
     return permutations;
 }
 
+// returns rents ordered by passengers and distance
 function allRentsOrdered(rents){
     let sortedByPassengers = rents.filter(rent => !rent.completed).sort((x, y) => x.passengers - y.passengers).reverse();
     return sortedByPassengers.sort((x, y) => x.travelDistance - y.travelDistance).reverse();
 }
 
-function computeCost(vehicle, rent){
+// compute profit of a single journey
+function computeProfit(vehicle, rent){
     let journeyTime = 0;
     if(rent.travelDistance > 50){
         journeyTime = rent.travelDistance;
@@ -88,6 +94,7 @@ function computeCost(vehicle, rent){
     return travelFee - refueling;
 }
 
+// assigning passengers to one permutation of vehicles and calculating the assumed profit
 function assignVehicles(onePermutation, rentsOrdered){
     const successfulAssignment = [];
     let tempRents = rentsOrdered;
@@ -107,23 +114,25 @@ function assignVehicles(onePermutation, rentsOrdered){
 
     let assumedProfit = 0;
     for(let i=0; i<successfulAssignment.length; i++){
-        assumedProfit += computeCost(successfulAssignment[i].vehicle, successfulAssignment[i].rent);
-        console.log(computeCost(successfulAssignment[i].vehicle, successfulAssignment[i].rent));
+        assumedProfit += computeProfit(successfulAssignment[i].vehicle, successfulAssignment[i].rent);
+        console.log(computeProfit(successfulAssignment[i].vehicle, successfulAssignment[i].rent));
     }
     console.log(assumedProfit);
 }
 
+// for router.GET (currently used for testing purposes)
 exports.rent_get_all_data = (req, res, next) => {
 
     getAllRents();
     getAllVehicles();
     function stat() {
-        assignVehicles(allVehicleCombinations(allVehicles)[0], allRents);
+        assignVehicles(allVehiclePermutations(allVehicles)[0], allRents);
         res.status(200).json(allRents);
     }
     setTimeout(stat, 100);
 }
 
+// for router.POST
 exports.rent_new = (req, res, next) => {
     let rent;
     if(req.body.completed){
@@ -144,9 +153,8 @@ exports.rent_new = (req, res, next) => {
     rent
     .save()
     .then(result => {
-        console.log(result);
         res.status(201).json({
-            message: "POST yay!",
+            message: 'created renting order',
             newRent: {
                 passengers: result.passengers,
                 travelDistance: result.travelDistance,
@@ -166,13 +174,13 @@ exports.rent_new = (req, res, next) => {
     });
 }
 
-function rentGetByID(req, res){
+// for router.GET/:id
+exports.rent_get_by_id = (req, res, next) => {
     const id = req.params.rentId;
     Renting.findById(id)
     .select('passengers travelDistance completed _id')
     .exec()
     .then(doc => {
-        console.log("from db", doc);
         if(doc){
             res.status(200).json({
                 renting: doc._id + ", passengers: " + doc.passengers + ", distance: " + doc.travelDistance + ", completed: " + doc.completed,
@@ -193,10 +201,7 @@ function rentGetByID(req, res){
     });
 }
 
-exports.rent_get_by_id = (req, res, next) => {
-    rentGetByID(req, res);
-}
-
+// for router.DELETE/:id
 exports.rent_remove = (req, res, next) => {
     const id = req.params.rentId;
     Renting.deleteOne({_id: id})
